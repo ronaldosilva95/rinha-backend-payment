@@ -1,0 +1,16 @@
+services:
+  redis:
+    image: redis
+    command: redis-server
+    ports:
+      - "6379:6379"
+  metrics-db:
+    image: postgres:17-alpine
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=payment-metrics
+    ports:
+      - "5432:5432"

@@ -1,0 +1,27 @@
+server:
+  port: 9999
+  servlet:
+    context-path: /
+
+payment:
+  service:
+    url: ${PROCESSOR_DEFAULT_URL:http://localhost:8001}
+    fallback: ${PROCESSOR_FALLBACK_URL:http://localhost:8002}
+#    timeout: 5000
+#    retry:
+#      attempts: 3
+#      delay: 2000
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/payment-metrics
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
