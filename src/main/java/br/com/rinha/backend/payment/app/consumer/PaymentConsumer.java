@@ -1,39 +1,54 @@
 package br.com.rinha.backend.payment.app.consumer;
 
-import br.com.rinha.backend.payment.infra.repository.RedisRepository;
+import br.com.rinha.backend.payment.app.controller.model.PaymentRequest;
 import br.com.rinha.backend.payment.infra.dataprovider.PaymentDataProvider;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.connection.stream.MapRecord;
-import org.springframework.data.redis.stream.StreamListener;
-import org.springframework.stereotype.Component;
 
-@Component
-public class PaymentConsumer implements StreamListener<String, MapRecord<String, String, String>> {
+public class PaymentConsumer {
 
-  private final PaymentDataProvider paymentDataProvider;
-  private final RedisRepository redisRepository;
+  private PaymentDataProvider paymentDataProvider;
+  private static PaymentConsumer instance;
+  private static LinkedBlockingQueue<PaymentRequest> queue = new LinkedBlockingQueue<>();
+
   private static final Logger logger = LoggerFactory.getLogger(PaymentConsumer.class);
 
-  public PaymentConsumer(PaymentDataProvider paymentDataProvider, RedisRepository redisRepository) {
-    this.paymentDataProvider = paymentDataProvider;
-    this.redisRepository = redisRepository;
+  public static void addToQueue(PaymentRequest request) {
+    queue.add(request);
   }
 
-  @Override
-  public void onMessage(MapRecord<String, String, String> message) {
-    final var paymentDate = LocalDateTime.now();
-    try {
-      var amount = new BigDecimal(message.getValue().get("amount"));
+  public static void initialize(PaymentDataProvider dataprovider, int queueThreads) {
+    instance = new PaymentConsumer();
+    instance.paymentDataProvider = dataprovider;
+    instance.start(queueThreads);
+  }
 
-      var response = paymentDataProvider.createPayment(paymentDate, message.getValue().get("correlationId"), amount);
-      redisRepository.addMetrics(message.getValue().get("correlationId"), paymentDate, amount, response);
-      logger.info("Pagamento processado com sucesso :: {} :: {}", response, message.getValue().get("correlationId"));
+  public void start(int queueThreads) {
+    var executor = Executors.newFixedThreadPool(queueThreads);
+    executor.submit(() -> {
+      while(true) {
+        var item = queue.take();
+        if (item == null) {
+          continue;
+        }
 
-    } catch (Exception e) {
-      logger.error("Pagamento não processado:: {} :: Erro: {}", message.getValue().get("correlationId"), e.getMessage());
-    }
+        executor.execute(() -> {
+          try {
+            final var paymentDate = ZonedDateTime.now();
+            var response = paymentDataProvider.createPayment(paymentDate, item.correlationId(), item.amount());
+            paymentDataProvider.addMetrics(item.correlationId(), paymentDate, item.amount(), response);
+            logger.info("Pagamento processado com sucesso :: {} :: {} :: {}", response, item.correlationId(), paymentDate.format(
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+
+          } catch (Exception e) {
+            logger.error("Pagamento não processado:: {} :: Erro: {}", item.correlationId(), e.getMessage());
+          }
+        });
+      }
+    });
   }
 }

@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "tb_metrics")
@@ -30,13 +30,13 @@ public class Metric {
   private String processor;
 
   @Column(name = "requested_at", nullable = false)
-  private LocalDateTime requestedAt;
+  private ZonedDateTime requestedAt;
 
   public Metric() {
   }
 
   public Metric(String correllationId, BigDecimal amount, String processor,
-      LocalDateTime requestedAt) {
+      ZonedDateTime requestedAt) {
     this.correllationId = correllationId;
     this.amount = amount;
     this.processor = processor;
@@ -75,11 +75,11 @@ public class Metric {
     this.processor = processor;
   }
 
-  public LocalDateTime getRequestedAt() {
+  public ZonedDateTime getRequestedAt() {
     return requestedAt;
   }
 
-  public void setRequestedAt(LocalDateTime requestedAt) {
+  public void setRequestedAt(ZonedDateTime requestedAt) {
     this.requestedAt = requestedAt;
   }
 }

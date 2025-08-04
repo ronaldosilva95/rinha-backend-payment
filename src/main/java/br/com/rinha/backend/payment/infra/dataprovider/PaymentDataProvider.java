@@ -3,11 +3,19 @@ package br.com.rinha.backend.payment.infra.dataprovider;
 import br.com.rinha.backend.payment.infra.dataprovider.client.PaymentClient;
 import br.com.rinha.backend.payment.infra.dataprovider.client.PaymentFallbackClient;
 import br.com.rinha.backend.payment.infra.dataprovider.model.PaymentRequest;
+import br.com.rinha.backend.payment.infra.repository.MetricsRepository;
+import br.com.rinha.backend.payment.infra.repository.model.Metric;
+import br.com.rinha.backend.payment.infra.repository.model.Summary;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -22,17 +30,38 @@ public class PaymentDataProvider {
   @Autowired
   private PaymentFallbackClient paymentFallbackClient;
 
-  @CircuitBreaker(name = "paymentService", fallbackMethod = "createPaymentFallback")
-  public String createPayment(LocalDateTime date, String correlationId, BigDecimal amount) {
+  @Autowired
+  private MetricsRepository metricsRepository;
+
+  @Value("${queue.name:payments-queue}")
+  private String queueName;
+
+  @Retry(name = "retryPaymentService")
+  @CircuitBreaker(name = "cirtcuitBreakerPaymentService", fallbackMethod = "createPaymentFallback")
+  public String createPayment(ZonedDateTime date, String correlationId, BigDecimal amount) {
     PaymentRequest paymentRequest = new PaymentRequest(correlationId, amount, date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
     paymentClient.createPayment(paymentRequest);
     return PROCESSOR_DEFAULT;
   }
 
-  public String createPaymentFallback(LocalDateTime date,String correlationId, BigDecimal amount, Throwable e) {
+  public String createPaymentFallback(ZonedDateTime date, String correlationId, BigDecimal amount, Throwable e) {
     PaymentRequest paymentRequest = new PaymentRequest(correlationId, amount, date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
     paymentFallbackClient.createPayment(paymentRequest);
     return PROCESSOR_FALLBACK;
+  }
+
+  @Async
+  public void addMetrics(String paymentId, ZonedDateTime paymentDate, BigDecimal value, String processor) {
+    metricsRepository.save(new Metric(paymentId, value, processor, paymentDate));
+  }
+
+  public List<Summary> getPaymentSummary(final ZonedDateTime startDate, final ZonedDateTime endDate) {
+    var object = metricsRepository.findMetricsGroupByProcessorAndRequestedAtBetween(startDate, endDate);
+    if (object != null && !object.isEmpty()) {
+      return object.stream().map(a ->
+          new Summary((Long) a[0], (BigDecimal) a[1], (String) a[2])).toList();
+    }
+    return Collections.emptyList();
   }
 
 }
