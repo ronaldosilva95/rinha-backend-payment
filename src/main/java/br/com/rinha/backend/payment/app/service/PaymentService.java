@@ -1,14 +1,11 @@
 package br.com.rinha.backend.payment.app.service;
 
-import br.com.rinha.backend.payment.app.consumer.PaymentConsumer;
 import br.com.rinha.backend.payment.app.controller.model.SummaryResponse;
 import br.com.rinha.backend.payment.app.controller.model.SummaryResponse.Metric;
 import br.com.rinha.backend.payment.infra.dataprovider.PaymentDataProvider;
-import br.com.rinha.backend.payment.infra.dataprovider.model.PaymentRequest;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,10 +13,6 @@ public class PaymentService {
 
   @Autowired
   private PaymentDataProvider paymentDataProvider;
-
-  public void createPayment(final String request) {
-    PaymentConsumer.addToQueue(request);
-  }
 
   public SummaryResponse getPaymentSummary(final ZonedDateTime startDate, final ZonedDateTime endDate) {
     var paymentSummary = paymentDataProvider.getPaymentSummary(startDate, endDate);

@@ -44,6 +44,14 @@ resilience4j:
       retryPaymentService:
         maxAttempts: 3
         waitDuration: 1s
+  ratelimiter:
+    instances:
+      rateLimiterPaymentService:
+        limitForPeriod: ${RATELIMITER_LIMIT_FOR_PERIOD:400}
+        limitRefreshPeriod: 1s
+        timeoutDuration: ${RATELIMITER_TIMEOUT_DURATION:100ms}
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 100
 
 feign:
   httpclient5:

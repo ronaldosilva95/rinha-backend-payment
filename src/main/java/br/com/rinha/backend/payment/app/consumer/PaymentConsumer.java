@@ -5,7 +5,6 @@ import br.com.rinha.backend.payment.infra.dataprovider.model.PaymentRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.slf4j.Logger;
@@ -32,21 +31,6 @@ public final class PaymentConsumer {
     instance.start(queueThreads);
   }
 
-//  private void start(int queueThreads) {
-//    var executor = Executors.newFixedThreadPool(queueThreads);
-//    executor.submit(() -> {
-//      while(true) {
-//        String item;
-//        item = queue.take();
-////        if (itemString == null) {
-////          continue;
-////        }
-//
-//        executor.execute(() -> processPayment(item));
-//      }
-//    });
-//  }
-
   private void start(int queueThreads) {
     for (int i = 0; i < queueThreads; i++) {
       var exec = Executors.newVirtualThreadPerTaskExecutor();
@@ -70,7 +54,7 @@ public final class PaymentConsumer {
 
       var response = paymentDataProvider.createPayment(paymentData);
       paymentDataProvider.addMetrics(paymentData.getCorrelationId(), paymentDate, paymentData.getAmount(), response);
-      logger.info("Pagamento processado com sucesso :: {} :: {} :: {}", response, paymentData.getCorrelationId(), paymentDate);
+//      logger.info("Pagamento processado com sucesso :: {} :: {} :: {}", response, paymentData.getCorrelationId(), paymentDate);
 
     } catch (Exception e) {
       logger.error("Pagamento não processado :: Erro: {}", e.getMessage());
