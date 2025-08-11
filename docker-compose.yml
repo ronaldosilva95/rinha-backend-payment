@@ -1,16 +1,17 @@
 x-service-templates:
   backend-payment-api: &backend-payment-api
-    image: payment-backend:latest
+    image: rinha-backend-api:latest
     hostname: payment-backend
     networks:
       - payment-processor
       - backend-network
     environment:
-      - JAVA_OPTS=-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport -XX:+UseParallelGC
+      - JAVA_OPTS=-XX:MaxRAMPercentage=90.0 -XX:+UseContainerSupport -XX:+UseG1GC
       - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
       - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
       - METRICS_DATABASE_URL=payment-backend-metrics-db:5432/payment-metrics
-      - QUEUE_THREADS=5
+      - QUEUE_THREADS=15
+      - LOGGING_LEVEL_ROOT=OFF
     depends_on:
       - metrics-db
     deploy:
@@ -42,21 +43,13 @@ services:
       resources:
         limits:
           cpus: "0.15"
-          memory: "10MB"
+          memory: "15MB"
   api-1:
     <<: *backend-payment-api
     hostname: api01
-    environment:
-      - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
-      - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
-      - METRICS_DATABASE_URL=payment-backend-metrics-db:5432/payment-metrics
   api-2:
     <<: *backend-payment-api
     hostname: api02
-    environment:
-      - PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
-      - PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
-      - METRICS_DATABASE_URL=payment-backend-metrics-db:5432/payment-metrics
   metrics-db:
     image: postgres:17-alpine
     hostname: payment-backend-metrics-db
@@ -71,10 +64,15 @@ services:
     ports:
       - "5432:5432"
     deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 2s
+        max_attempts: 10
+        window: 5s
       resources:
         limits:
           cpus: "0.15"
-          memory: "40MB"
+          memory: "35MB"
 networks:
   backend-network:
     driver: bridge

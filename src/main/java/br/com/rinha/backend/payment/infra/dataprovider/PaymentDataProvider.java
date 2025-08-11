@@ -38,14 +38,14 @@ public class PaymentDataProvider {
 
   @Retry(name = "retryPaymentService")
   @CircuitBreaker(name = "cirtcuitBreakerPaymentService", fallbackMethod = "createPaymentFallback")
-  public String createPayment(ZonedDateTime date, String correlationId, BigDecimal amount) {
-    PaymentRequest paymentRequest = new PaymentRequest(correlationId, amount, date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+  public String createPayment(PaymentRequest paymentRequest) {
+//    PaymentRequest paymentRequest = new PaymentRequest(correlationId, amount, date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
     paymentClient.createPayment(paymentRequest);
     return PROCESSOR_DEFAULT;
   }
 
-  public String createPaymentFallback(ZonedDateTime date, String correlationId, BigDecimal amount, Throwable e) {
-    PaymentRequest paymentRequest = new PaymentRequest(correlationId, amount, date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+  public String createPaymentFallback(PaymentRequest paymentRequest, Throwable e) {
+//    PaymentRequest paymentRequest = new PaymentRequest(correlationId, amount, date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
     paymentFallbackClient.createPayment(paymentRequest);
     return PROCESSOR_FALLBACK;
   }

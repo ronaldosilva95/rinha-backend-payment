@@ -3,10 +3,6 @@ server:
   servlet:
     context-path: /
 
-logging:
-  level:
-    root: OFF
-
 payment:
   service:
     url: ${PROCESSOR_DEFAULT_URL:http://localhost:8001}
@@ -19,6 +15,12 @@ spring:
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
+  hikari:
+    maximum-pool-size: 20
+    minimum-idle: 5
+    idle-timeout: 30000
+    connection-timeout: 30000
+    max-lifetime: 1800000
   jpa:
     hibernate:
       ddl-auto: update
@@ -35,10 +37,23 @@ resilience4j:
         slidingWindowSize: 10
         minimumNumberOfCalls: 5
         failureRateThreshold: 50
-        waitDurationInOpenState: 5000
+        waitDurationInOpenState: 2000
         permittedNumberOfCallsInHalfOpenState: 3
   retry:
     instances:
       retryPaymentService:
         maxAttempts: 3
         waitDuration: 1s
+
+feign:
+  httpclient5:
+    enabled: true
+    max-connections: 200
+    max-connections-per-route: 50
+    connectTimeout: 3000
+    readTimeout: 3000
+  client:
+    config:
+      default:
+        connectTimeout: 3000
+        readTimeout: 3000
