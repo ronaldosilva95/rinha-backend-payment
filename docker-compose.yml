@@ -22,14 +22,14 @@ x-service-templates:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ] # Or use wget
       interval: 30s
       timeout: 1s
-      retries: 2
+      retries: 3
       start_period: 20s # Time to allow the application to fully start
     deploy:
-#      restart_policy:
-#        condition: on-failure
-#        delay: 2s
-#        max_attempts: 500
-#        window: 5s
+      restart_policy:
+        condition: on-failure
+        delay: 2s
+        max_attempts: 500
+        window: 5s
       resources:
         limits:
           cpus: "0.60"
@@ -51,6 +51,11 @@ services:
       - backend-network
       - payment-processor
     deploy:
+#      restart_policy:
+#        condition: on-failure
+#        delay: 2s
+#        max_attempts: 500
+#        window: 5s
       resources:
         limits:
           cpus: "0.15"
