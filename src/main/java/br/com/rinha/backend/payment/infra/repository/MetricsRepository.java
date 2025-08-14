@@ -26,4 +26,7 @@ public interface MetricsRepository extends JpaRepository<Metric, String> {
       @Param("startDate") ZonedDateTime startDate,
       @Param("endDate") ZonedDateTime endDate);
 
+  @Query("select COUNT(1), SUM(e.amount), e.processor FROM Metric e GROUP BY e.processor ORDER BY e.processor")
+  List<Object[]> findAllMetricsGroupByProcessor();
+
 }

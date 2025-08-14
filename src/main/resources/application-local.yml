@@ -1,0 +1,6 @@
+PROCESSOR_DEFAULT_URL: http://localhost:8001
+PROCESSOR_FALLBACK_URL: http://localhost:8002
+QUEUE_THREADS: 10
+RETRY_COUNT: 2
+
+METRICS_DATABASE_URL: localhost:5432/payment-metrics

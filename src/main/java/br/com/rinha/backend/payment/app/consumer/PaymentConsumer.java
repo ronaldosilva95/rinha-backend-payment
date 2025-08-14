@@ -52,7 +52,7 @@ public final class PaymentConsumer {
       var paymentData = objectMapper.readValue(info, PaymentRequest.class);
       paymentData.setRequestedAt(ZonedDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 
-      var response = paymentDataProvider.createPayment(paymentData);
+      var response = paymentDataProvider.createPayment(paymentData, 0);
       paymentDataProvider.addMetrics(paymentData.getCorrelationId(), paymentDate, paymentData.getAmount(), response);
 //      logger.info("Pagamento processado com sucesso :: {} :: {} :: {}", response, paymentData.getCorrelationId(), paymentDate);
 

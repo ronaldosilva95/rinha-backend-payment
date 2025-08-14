@@ -3,15 +3,22 @@ server:
   servlet:
     context-path: /
 
+PROCESSOR_DEFAULT_URL: http://payment-processor-default:8080
+PROCESSOR_FALLBACK_URL: http://payment-processor-fallback:8080
+QUEUE_THREADS: 15
+RETRY_COUNT: 6
+METRICS_DATABASE_URL: payment-backend-metrics-db:5432/payment-metrics
+
 payment:
   service:
-    url: ${PROCESSOR_DEFAULT_URL:http://localhost:8001}
-    fallback: ${PROCESSOR_FALLBACK_URL:http://localhost:8002}
+    url: ${PROCESSOR_DEFAULT_URL}
+    fallback: ${PROCESSOR_FALLBACK_URL}
   queue.threads: ${QUEUE_THREADS:10}
+  retry.count: ${RETRY_COUNT:2}
 
 spring:
   datasource:
-    url: jdbc:postgresql://${METRICS_DATABASE_URL:localhost:5432/payment-metrics}
+    url: jdbc:postgresql://${METRICS_DATABASE_URL}
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -28,40 +35,20 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
-
-resilience4j:
-  circuitbreaker:
-    instances:
-      cirtcuitBreakerPaymentService:
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        failureRateThreshold: 50
-        waitDurationInOpenState: 2000
-        permittedNumberOfCallsInHalfOpenState: 3
-  retry:
-    instances:
-      retryPaymentService:
-        maxAttempts: 3
-        waitDuration: 1s
-  ratelimiter:
-    instances:
-      rateLimiterPaymentService:
-        limitForPeriod: ${RATELIMITER_LIMIT_FOR_PERIOD:400}
-        limitRefreshPeriod: 1s
-        timeoutDuration: ${RATELIMITER_TIMEOUT_DURATION:100ms}
-        registerHealthIndicator: true
-        eventConsumerBufferSize: 100
+  data:
+    jpa:
+      repositories:
+        bootstrap-mode: lazy
 
 feign:
   httpclient5:
     enabled: true
     max-connections: 200
     max-connections-per-route: 50
-    connectTimeout: 3000
-    readTimeout: 3000
+    connectTimeout: 2000
+    readTimeout: 2000
   client:
     config:
       default:
-        connectTimeout: 3000
-        readTimeout: 3000
+        connectTimeout: 2000
+        readTimeout: 2000
